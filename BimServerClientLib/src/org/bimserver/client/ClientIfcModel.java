@@ -356,7 +356,7 @@ public class ClientIfcModel extends IfcModel {
 			for (IdEObject ifcProduct : allWithSubTypes) {
 				GeometryInfo geometry = (GeometryInfo) ifcProduct.eGet(geometryFeature);
 				if (geometry != null) {
-					if (geometry.getData() == null || geometry.getData().getIndices() == null) {
+					if (geometry.getData() == null || geometry.getData().getIndices() == null || geometry.getData().getIndices().getData() == null) {
 						queryPart.addOid(geometry.getOid());
 						geometryInfoOidToOid.put(geometry.getOid(), ifcProduct.getOid());
 					}
