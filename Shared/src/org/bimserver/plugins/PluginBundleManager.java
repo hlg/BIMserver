@@ -36,6 +36,7 @@ import org.bimserver.interfaces.objects.SPluginBundle;
 import org.bimserver.interfaces.objects.SPluginBundleType;
 import org.bimserver.interfaces.objects.SPluginBundleVersion;
 import org.bimserver.interfaces.objects.SPluginInformation;
+import org.bimserver.models.store.File;
 import org.bimserver.plugins.classloaders.DelegatingClassLoader;
 import org.bimserver.plugins.classloaders.EclipsePluginClassloader;
 import org.bimserver.plugins.classloaders.FileJarClassLoader;

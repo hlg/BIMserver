@@ -22,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.bimserver.client.BimServerClient;
 import org.bimserver.client.json.JsonBimServerClientFactory;
 import org.bimserver.client.protocolbuffers.ProtocolBuffersBimServerClientFactory;
 import org.bimserver.client.soap.SoapBimServerClientFactory;
@@ -102,7 +103,7 @@ public class LocalDevSetup {
 	 * @return
 	 */
 	@SuppressWarnings("resource")
-	public static final BimServerClientInterface setupJson(String address) {
+	public static final BimServerClient setupJson(String address) {
 		try {
 			Path home = Paths.get("home");
 			if (!Files.isDirectory(home)) {
@@ -123,8 +124,8 @@ public class LocalDevSetup {
 
 			pluginManager.initAllLoadedPlugins();
 			
-			BimServerClientFactory factory = new JsonBimServerClientFactory(metaDataManager, address);
-			return factory.create(new UsernamePasswordAuthenticationInfo("admin@bimserver.org", "admin"));
+			JsonBimServerClientFactory factory = new JsonBimServerClientFactory(metaDataManager, address);
+			return factory.create(new UsernamePasswordAuthenticationInfo("testadmin@localhost", "admin"));
 		} catch (PluginException e) {
 			LOGGER.error("", e);
 		} catch (ServiceException e) {

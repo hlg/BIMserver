@@ -66,7 +66,7 @@ public class TestBigModelEmfRemote {
 		boolean useLowLevelCalls = false;
 		
 		try (BimServerClientFactory factory = new JsonBimServerClientFactory("http://localhost:8080")){
-			BimServerClientInterface bimServerClient = factory.create(new UsernamePasswordAuthenticationInfo("admin@bimserver.org", "admin"));
+			BimServerClientInterface bimServerClient = factory.create(new UsernamePasswordAuthenticationInfo("testadmin@localhost", "admin"));
 			
 			SProject newProject = bimServerClient.getServiceInterface().addProject("test" + Math.random(), "ifc2x3tc1");
 			
