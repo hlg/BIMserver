@@ -45,7 +45,7 @@
 		<dependency>
 			<groupId>org.opensourcebim</groupId>
 			<artifactId>bimserverjar</artifactId>
-			<version>1.5.181-SNAPSHOT</version>
+			<version>1.5.182-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
