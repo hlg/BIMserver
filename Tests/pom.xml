@@ -58,5 +58,10 @@
 			<version>0.0.97-SNAPSHOT</version>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.opensourcebim</groupId>
+			<artifactId>pluginbase</artifactId>
+			<version>1.5.183-SNAPSHOT</version>
+		</dependency>
 	</dependencies>
 </project>
