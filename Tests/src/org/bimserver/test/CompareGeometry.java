@@ -1,16 +1,16 @@
 package org.bimserver.test;
 
 import com.google.common.collect.Sets;
-import org.bimserver.LocalDevSetup;
+import org.bimserver.client.BimServerClient;
+import org.bimserver.client.json.JsonBimServerClientFactory;
 import org.bimserver.emf.IfcModelInterface;
 import org.bimserver.interfaces.objects.SProject;
 import org.bimserver.models.geometry.GeometryData;
-import org.bimserver.models.ifc2x3tc1.IfcProduct;
-import org.bimserver.plugins.services.BimServerClientInterface;
-import org.bimserver.plugins.services.Geometry;
+import org.bimserver.models.ifc4.IfcProduct;
+import org.bimserver.shared.ChannelConnectionException;
+import org.bimserver.shared.UsernamePasswordAuthenticationInfo;
 import org.bimserver.shared.exceptions.BimServerClientException;
-import org.bimserver.shared.exceptions.ServerException;
-import org.bimserver.shared.exceptions.UserException;
+import org.bimserver.shared.exceptions.ServiceException;
 import org.junit.Assert;
 
 import java.util.Arrays;
@@ -19,8 +19,10 @@ import java.util.List;
 import java.util.Set;
 
 public class CompareGeometry {
-    public static void main(String[] args) throws ServerException, UserException, BimServerClientException {
-        BimServerClientInterface client = LocalDevSetup.setupJson("http://localhost:8080");
+    public static void main(String[] args) throws ServiceException, BimServerClientException, ChannelConnectionException {
+        BimServerClient client = new JsonBimServerClientFactory("http://localhost:8082").create(
+                new UsernamePasswordAuthenticationInfo("admin@localhost", "admin")
+        );
         long poid = 131073;
         SProject project = client.getServiceInterface().getProjectByPoid(poid);
         List<Long> revisions = project.getRevisions();
