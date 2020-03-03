@@ -346,19 +346,18 @@ public class Express2EMF {
 				//
 				// } else {
 				if (attrib instanceof InverseAttribute) {
-					addInverseAttribute(attrib, cls);
+					addInverseAttribute((InverseAttribute) attrib, cls);
 				}
 				// }
 			}
 		}
 	}
 
-	private void addInverseAttribute(Attribute attrib, EClass cls) {
-		InverseAttribute inverseAttribute = (InverseAttribute) attrib;
+	private void addInverseAttribute(InverseAttribute inverseAttribute, EClass cls) {
 		EReference eRef = eFactory.createEReference();
 		eRef.setUnsettable(true); // Inverses are always optional?
 		eRef.getEAnnotations().add(createInverseAnnotation());
-		eRef.setName(attrib.getName());
+		eRef.setName(inverseAttribute.getName());
 		if (inverseAttribute.getMax_cardinality() != null) {
 			IntegerBound max_cardinality = (IntegerBound) inverseAttribute.getMax_cardinality();
 			if (max_cardinality.getBound_value() == -1) {
@@ -385,6 +384,11 @@ public class Express2EMF {
 		} else {
 			System.out.println("Inverse mismatch");
 			System.out.println(classifier.getName() + "." + reference.getName() + " => " + cls.getName() + "." + eRef.getName());
+			if(reference.getEReferenceType().isSuperTypeOf(cls)){
+				eRef.setEOpposite(reference);
+			} else {
+				System.out.println("Non-standard: inverse must be defined on the domain of the inverted attribute or a subtype or selection element of the domain");
+			}
 		}
 		cls.getEStructuralFeatures().add(eRef);
 	}
