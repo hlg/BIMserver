@@ -519,8 +519,12 @@ public class ServiceInterfaceAdaptor implements org.bimserver.shared.interfaces.
 	public java.util.List<org.bimserver.interfaces.objects.SBounds> listBoundingBoxes(java.util.Set<java.lang.Long> roids) throws UserException, ServerException {
 		return null;
 	}
-	
-	public java.lang.Long regenerateGeometry(Long roid, Long eoid, Long goid) throws UserException, ServerException {
+
+	public java.lang.Long regenerateGeometry(Long roid, Long eoid) throws UserException, ServerException {
+		return null;
+	}
+
+	public java.lang.Long regenerateGeometryByOid(Long roid, Long eoid, Long oid) throws UserException, ServerException {
 		return null;
 	}
 	

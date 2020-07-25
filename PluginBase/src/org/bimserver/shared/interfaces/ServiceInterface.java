@@ -1584,12 +1584,17 @@ public interface ServiceInterface extends PublicInterface {
 	
 	@WebMethod(action = "getModelBoundsForConcreteRevision")
 	SBounds getModelBoundsForConcreteRevision(@WebParam(name = "croid", partName = "getModelBoundsForConcreteRevision.croid") Long croid) throws ServerException, UserException;
-	
+
 	@WebMethod(action = "regenerateGeometry")
 	Long regenerateGeometry(
+			@WebParam(name = "roid", partName = "regenerateGeometry.roid") Long roid,
+			@WebParam(name = "eoid", partName = "regenerateGeometry.eoid") Long eoi) throws ServerException, UserException;
+
+	@WebMethod(action = "regenerateGeometryByOid")
+	Long regenerateGeometryByOid(
             @WebParam(name = "roid", partName = "regenerateGeometry.roid") Long roid,
             @WebParam(name = "eoid", partName = "regenerateGeometry.eoid") Long eoid,
-			@WebParam(name = "goid", partName = "regenerateGeometry.goid") Long goid) throws ServerException, UserException;
+			@WebParam(name = "oid", partName = "regenerateGeometry.oid") Long oid) throws ServerException, UserException;
 
 	@WebMethod(action = "getModelBoundsUntransformed")
 	SBounds getModelBoundsUntransformed(
