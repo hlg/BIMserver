@@ -3320,13 +3320,18 @@ public class ServiceImpl extends GenericServiceImpl implements ServiceInterface 
 	}
 
 	@Override
-	public Long regenerateGeometry(Long roid, Long eoid, Long goid) throws ServerException, UserException {
+	public Long regenerateGeometry(Long roid, Long eoid) throws ServerException, UserException {
+		return regenerateGeometryByOid(roid, eoid, -1L);
+	}
+
+	@Override
+	public Long regenerateGeometryByOid(Long roid, Long eoid, Long oid) throws ServerException, UserException {
 		try (DatabaseSession session = getBimServer().getDatabase(). createSession(OperationType.POSSIBLY_WRITE)) {
 			Revision revision = session.get(roid, OldQuery.getDefault());
 			SUser user = getCurrentUser();
 			ProgressOnProjectTopic progressTopic = getBimServer().getNotificationsManager().createProgressOnProjectTopic(getAuthorization().getUoid(), revision.getProject().getOid(), SProgressTopicType.UPLOAD, "Regenerate geometry");
 
-			RegenerateGeometryDatabaseAction action = new RegenerateGeometryDatabaseAction(getBimServer(), session, getInternalAccessMethod(), revision.getProject().getOid(), roid, getCurrentUser().getOid(), eoid, goid);
+			RegenerateGeometryDatabaseAction action = new RegenerateGeometryDatabaseAction(getBimServer(), session, getInternalAccessMethod(), revision.getProject().getOid(), roid, getCurrentUser().getOid(), eoid, oid);
 			LongGenericAction longAction = new LongGenericAction(progressTopic.getKey().getId(), getBimServer(), user.getUsername(), user.getName(), getAuthorization(), action);
 			getBimServer().getLongActionManager().start(longAction);
 

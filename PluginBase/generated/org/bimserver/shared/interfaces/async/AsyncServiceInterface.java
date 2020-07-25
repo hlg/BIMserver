@@ -2318,7 +2318,7 @@ public class AsyncServiceInterface {
 		executorService.submit(new Runnable(){
 			public void run(){
 				try {
-					callback.success(syncService.regenerateGeometry(roid, eoid, goid));
+					callback.success(syncService.regenerateGeometryByOid(roid, eoid, goid));
 				} catch (Throwable e) {
 					callback.error(e);
 				}

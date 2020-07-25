@@ -49,14 +49,16 @@ public class RegenerateGeometryDatabaseAction extends ProjectBasedDatabaseAction
 	private long poid;
 	private String renderEngineName;
 	private Long eoid;
+	private long oid;
 
-	public RegenerateGeometryDatabaseAction(BimServer bimServer, DatabaseSession databaseSession, AccessMethod accessMethod, long poid, long roid, long uoid, Long eoid, long goid) {
+	public RegenerateGeometryDatabaseAction(BimServer bimServer, DatabaseSession databaseSession, AccessMethod accessMethod, long poid, long roid, long uoid, Long eoid, long oid) {
 		super(databaseSession, accessMethod);
 		this.bimServer = bimServer;
 		this.poid = poid;
 		this.roid = roid;
 		this.uoid = uoid;
 		this.eoid = eoid;
+		this.oid = oid;
 	}
 
 	@Override
@@ -82,7 +84,7 @@ public class RegenerateGeometryDatabaseAction extends ProjectBasedDatabaseAction
 
 		QueryContext queryContext = new QueryContext(getDatabaseSession(), packageMetaData, revision.getProject().getId(), revision.getId(), roid, concreteRevision.getOid(), highestStopId);
 		try {
-			GenerateGeometryResult generateGeometry = streamingGeometryGenerator.generateGeometry(uoid, getDatabaseSession(), queryContext, 1000, -1); // TODO get the actual amount of products
+			GenerateGeometryResult generateGeometry = streamingGeometryGenerator.generateGeometry(uoid, getDatabaseSession(), queryContext, 1000, oid); // TODO get the actual amount of products
 			
 			for (Revision other : concreteRevision.getRevisions()) {
 				other.setHasGeometry(true);
@@ -124,7 +126,7 @@ public class RegenerateGeometryDatabaseAction extends ProjectBasedDatabaseAction
 		revision.getExtendedData().add(extendedData);
 		extendedData.setProject(revision.getProject());
 		extendedData.setRevision(revision);
-		
+
 		getDatabaseSession().store(file);
 		getDatabaseSession().store(extendedData);
 		
