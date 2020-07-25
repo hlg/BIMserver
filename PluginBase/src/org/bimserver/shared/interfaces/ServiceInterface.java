@@ -1587,8 +1587,9 @@ public interface ServiceInterface extends PublicInterface {
 	
 	@WebMethod(action = "regenerateGeometry")
 	Long regenerateGeometry(
-		@WebParam(name = "roid", partName = "regenerateGeometry.roid") Long roid,
-		@WebParam(name = "eoid", partName = "regenerateGeometry.eoid") Long eoid) throws ServerException, UserException;
+            @WebParam(name = "roid", partName = "regenerateGeometry.roid") Long roid,
+            @WebParam(name = "eoid", partName = "regenerateGeometry.eoid") Long eoid,
+			@WebParam(name = "goid", partName = "regenerateGeometry.goid") Long goid) throws ServerException, UserException;
 
 	@WebMethod(action = "getModelBoundsUntransformed")
 	SBounds getModelBoundsUntransformed(
