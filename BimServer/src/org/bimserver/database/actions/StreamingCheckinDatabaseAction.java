@@ -233,7 +233,7 @@ public class StreamingCheckinDatabaseAction extends GenericCheckinDatabaseAction
 				StreamingGeometryGenerator geometryGenerator = new StreamingGeometryGenerator(getBimServer(), progressListener, -1L, report);
 				setProgress("Generating geometry...", 0);
 
-				GenerateGeometryResult generateGeometry = geometryGenerator.generateGeometry(getActingUid(), getDatabaseSession(), queryContext, size);
+				GenerateGeometryResult generateGeometry = geometryGenerator.generateGeometry(getActingUid(), getDatabaseSession(), queryContext, size, -1);
 			
 				for (Revision other : concreteRevision.getRevisions()) {
 					other.setHasGeometry(true);

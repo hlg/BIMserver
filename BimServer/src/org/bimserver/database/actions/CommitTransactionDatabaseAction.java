@@ -241,7 +241,7 @@ public class CommitTransactionDatabaseAction extends GenericCheckinDatabaseActio
 					
 					StreamingGeometryGenerator streamingGeometryGenerator = new StreamingGeometryGenerator(getBimServer(), null, -1L, report);
 	
-					GenerateGeometryResult generateGeometry = streamingGeometryGenerator.generateGeometry(authorization.getUoid(), getDatabaseSession(), queryContext, summaryMap.count());
+					GenerateGeometryResult generateGeometry = streamingGeometryGenerator.generateGeometry(authorization.getUoid(), getDatabaseSession(), queryContext, summaryMap.count(), -1);
 					
 					concreteRevision.setMultiplierToMm(generateGeometry.getMultiplierToMm());
 					concreteRevision.setBounds(generateGeometry.getBounds());

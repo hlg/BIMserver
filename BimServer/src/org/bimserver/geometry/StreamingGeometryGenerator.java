@@ -158,7 +158,7 @@ public class StreamingGeometryGenerator extends GenericGeometryGenerator {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public GenerateGeometryResult generateGeometry(long uoid, final DatabaseSession databaseSession, QueryContext queryContext, long nrObjects) throws BimserverDatabaseException, GeometryGeneratingException {
+	public GenerateGeometryResult generateGeometry(long uoid, final DatabaseSession databaseSession, QueryContext queryContext, long nrObjects, long productOid) throws BimserverDatabaseException, GeometryGeneratingException {
 		GenerateGeometryResult generateGeometryResult = new GenerateGeometryResult();
 		packageMetaData = queryContext.getPackageMetaData();
 		productClass = packageMetaData.getEClass("IfcProduct");
@@ -288,6 +288,9 @@ public class StreamingGeometryGenerator extends GenericGeometryGenerator {
 					Query query2 = new Query(eClass.getName() + "Main query", packageMetaData);
 					QueryPart queryPart2 = query2.createQueryPart();
 					queryPart2.addType(eClass, false);
+					if(productOid>-1){
+						queryPart2.addOid(productOid);
+					}
 					Include representationInclude = queryPart2.createInclude();
 					representationInclude.addType(eClass, false);
 					representationInclude.addFieldDirect("Representation");
@@ -555,6 +558,7 @@ public class StreamingGeometryGenerator extends GenericGeometryGenerator {
 				Query query3 = new Query("Remaining " + eClass.getName(), packageMetaData);
 				QueryPart queryPart3 = query3.createQueryPart();
 				queryPart3.addType(eClass, false);
+				if(productOid>-1) queryPart3.addOid(productOid);
 				Include include3 = queryPart3.createInclude();
 				include3.addType(eClass, false);
 				include3.addFieldDirect("Representation");

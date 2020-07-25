@@ -2314,11 +2314,11 @@ public class AsyncServiceInterface {
 		});
 	}
 	
-	public void regenerateGeometry(final java.lang.Long roid, final java.lang.Long eoid, final RegenerateGeometryCallback callback) {
+	public void regenerateGeometry(final Long roid, final Long eoid, Long goid, final RegenerateGeometryCallback callback) {
 		executorService.submit(new Runnable(){
 			public void run(){
 				try {
-					callback.success(syncService.regenerateGeometry(roid, eoid));
+					callback.success(syncService.regenerateGeometry(roid, eoid, goid));
 				} catch (Throwable e) {
 					callback.error(e);
 				}
