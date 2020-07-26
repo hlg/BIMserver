@@ -313,6 +313,7 @@ public class CommitTransactionDatabaseAction extends GenericCheckinDatabaseActio
 					newRevision.setBoundsUntransformed(previousRevision.getBoundsUntransformed());
 					newRevision.setBoundsMm(previousRevision.getBoundsMm());
 					newRevision.setBoundsUntransformedMm(previousRevision.getBoundsUntransformedMm());
+					newRevision.setNrPrimitives(previousRevision.getNrPrimitives());
 					
 					// TODO validate this, contains ids?
 					newRevision.setDensityCollection(previousRevision.getDensityCollection());
