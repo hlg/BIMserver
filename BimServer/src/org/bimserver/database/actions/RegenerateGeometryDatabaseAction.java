@@ -30,11 +30,7 @@ import org.bimserver.emf.PackageMetaData;
 import org.bimserver.geometry.GeometryGenerationReport;
 import org.bimserver.geometry.StreamingGeometryGenerator;
 import org.bimserver.models.log.AccessMethod;
-import org.bimserver.models.store.ConcreteRevision;
-import org.bimserver.models.store.ExtendedData;
-import org.bimserver.models.store.File;
-import org.bimserver.models.store.Revision;
-import org.bimserver.models.store.User;
+import org.bimserver.models.store.*;
 import org.bimserver.shared.QueryContext;
 import org.bimserver.shared.exceptions.ServerException;
 import org.bimserver.shared.exceptions.UserException;
@@ -93,12 +89,13 @@ public class RegenerateGeometryDatabaseAction extends ProjectBasedDatabaseAction
 			concreteRevision.setMultiplierToMm(generateGeometry.getMultiplierToMm());
 			concreteRevision.setBounds(generateGeometry.getBounds());
 			concreteRevision.setBoundsUntransformed(generateGeometry.getBoundsUntransformed());
-			
+			ExtendedDataSchema htmlSchema = getDatabaseSession().querySingle(StorePackage.eINSTANCE.getExtendedDataSchema_Name(), "GEOMETRY_GENERATION_REPORT_HTML_1_1");
+			ExtendedDataSchema jsonSchema = getDatabaseSession().querySingle(StorePackage.eINSTANCE.getExtendedDataSchema_Name(), "GEOMETRY_GENERATION_REPORT_JSON_1_1");
 			byte[] htmlBytes = report.toHtml().getBytes(Charsets.UTF_8);
 			byte[] jsonBytes = report.toJson().toString().getBytes(Charsets.UTF_8);
 
-			storeExtendedData(htmlBytes, "text/html", "html", revision);
-			storeExtendedData(jsonBytes, "application/json", "json", revision);
+			storeExtendedData(htmlSchema, htmlBytes, "text/html", "html", revision, report.getTimeToGenerateMs());
+			storeExtendedData(jsonSchema, jsonBytes, "application/json", "json", revision, report.getTimeToGenerateMs());
 			
 			getDatabaseSession().store(revision);
 			getDatabaseSession().store(concreteRevision);
@@ -110,7 +107,7 @@ public class RegenerateGeometryDatabaseAction extends ProjectBasedDatabaseAction
 		return null;
 	}
 	
-	private void storeExtendedData(byte[] bytes, String mime, String extension, final Revision revision) throws BimserverDatabaseException {
+	private void storeExtendedData(ExtendedDataSchema extendedDataSchema, byte[] bytes, String mime, String extension, final Revision revision, long timeToGenerate) throws BimserverDatabaseException {
 		ExtendedData extendedData = getDatabaseSession().create(ExtendedData.class);
 		File file = getDatabaseSession().create(File.class);
 		file.setData(bytes);
@@ -123,6 +120,8 @@ public class RegenerateGeometryDatabaseAction extends ProjectBasedDatabaseAction
 		extendedData.setAdded(new Date());
 		extendedData.setSize(file.getData().length);
 		extendedData.setFile(file);
+		extendedData.setSchema(extendedDataSchema);
+		extendedData.setTimeToGenerate(timeToGenerate);
 		revision.getExtendedData().add(extendedData);
 		extendedData.setProject(revision.getProject());
 		extendedData.setRevision(revision);
