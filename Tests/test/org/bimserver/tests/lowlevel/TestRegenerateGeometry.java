@@ -19,7 +19,7 @@ package org.bimserver.tests.lowlevel;
 
 import org.bimserver.emf.IfcModelInterface;
 import org.bimserver.interfaces.objects.*;
-import org.bimserver.models.ifc4.IfcProduct;
+import org.bimserver.models.ifc4.*;
 import org.bimserver.plugins.services.BimServerClientInterface;
 import org.bimserver.shared.ChannelConnectionException;
 import org.bimserver.shared.UsernamePasswordAuthenticationInfo;
@@ -31,34 +31,98 @@ import org.bimserver.shared.interfaces.LowLevelInterface;
 import org.bimserver.shared.interfaces.ServiceInterface;
 import org.bimserver.test.TestWithEmbeddedServer;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.Assert.fail;
 
 public class TestRegenerateGeometry extends TestWithEmbeddedServer {
 
 	private BimServerClientInterface bimServerClient;
+	private ServiceInterface serviceInterface;
+	private LowLevelInterface lowLevelInterface;
+	private long poid;
+	private long renderEngineOid;
 
-	@Test
-	public void testLowLevelNoGeomChangeAfterRegenerate() throws ServiceException, ChannelConnectionException, BimServerClientException, MalformedURLException {
+	@Before
+	public void setup() throws ServiceException, ChannelConnectionException, MalformedURLException {
 		// setup and checkin
 		bimServerClient = getFactory().create(new UsernamePasswordAuthenticationInfo("admin@bimserver.org", "admin"));
-		LowLevelInterface lowLevelInterface = bimServerClient.getLowLevelInterface();
-		ServiceInterface serviceInterface = bimServerClient.getServiceInterface();
-		SProject project = serviceInterface.addProject("test" + Math.random(), "ifc4");
-		SDeserializerPluginConfiguration deserializer = serviceInterface.getSuggestedDeserializerForExtension("ifc", project.getOid());
-		bimServerClient.checkinSync(project.getOid(), "test", deserializer.getOid(), false, new URL("https://standards.buildingsmart.org/IFC/RELEASE/IFC4/ADD2_TC1/HTML/annex/annex-e/wall-with-opening-and-window.ifc")); // TODO add to test data repo
-		project = refreshProject(bimServerClient, project);
+		lowLevelInterface = bimServerClient.getLowLevelInterface();
+		serviceInterface = bimServerClient.getServiceInterface();
+		renderEngineOid = bimServerClient.getPluginInterface().getDefaultRenderEngine().getOid();
+		poid = serviceInterface.addProject("test" + Math.random(), "ifc4").getOid();
+		SDeserializerPluginConfiguration deserializer = serviceInterface.getSuggestedDeserializerForExtension("ifc", poid);
+		bimServerClient.checkinSync(poid, "test", deserializer.getOid(), false, new URL("https://standards.buildingsmart.org/IFC/RELEASE/IFC4/ADD2_TC1/HTML/annex/annex-e/wall-with-opening-and-window.ifc")); // TODO add to test data repo
+	}
+
+	@Test
+	public void testChangeAffectingMultipleProducts() throws ServerException, UserException, BimServerClientException {
+		// change opening position: all 3 products (wall, opening, window) will have to be regenerated
+		SProject project = serviceInterface.getProjectByPoid(poid);
 		SRevision revision1 = serviceInterface.getRevision(project.getLastRevisionId());
-		long renderEngineOid = bimServerClient.getPluginInterface().getDefaultRenderEngine().getOid();
+		IfcModelInterface model = bimServerClient.getModel(project, revision1.getOid(), true, true, true);
+		IfcOpeningElement opening = model.getFirst(IfcOpeningElement.class);
+		IfcCartesianPoint openingLocation = ((IfcAxis2Placement3D)((IfcLocalPlacement) opening.getObjectPlacement()).getRelativePlacement()).getLocation();
+		Assert.assertEquals("Unexpected original coordinates", openingLocation.getCoordinates(), Arrays.asList(1000.,0.,500.));
+		long tid = lowLevelInterface.startTransaction(poid);
+		lowLevelInterface.setDoubleAttributes(tid, openingLocation.getOid(), "Coordinates", Arrays.asList(1500.,0.,800.));
+		long newRoid = lowLevelInterface.commitTransaction(tid, "Moved opening to x=1500, z=800", true);
+		IfcModelInterface newModel = bimServerClient.getModel(project, newRoid, true, true, true);
+		IfcOpeningElement newOpening = newModel.getFirst(IfcOpeningElement.class);
+		IfcCartesianPoint newOpeningLocation = ((IfcAxis2Placement3D)((IfcLocalPlacement) newOpening.getObjectPlacement()).getRelativePlacement()).getLocation();
+		Assert.assertEquals("Unexpected updated coordinates", newOpeningLocation.getCoordinates(), Arrays.asList(1500.,0.,800.));
+		Assert.assertEquals("opening OID should not change", opening.getOid(), newOpening.getOid());
+		Assert.assertNotEquals("opening RID should change", opening.getRid(), newOpening.getRid());  // new geometry assigned
+		// Assert.assertEquals("placement RID should not change", opening.getObjectPlacement().getRid(), newOpening.getObjectPlacement().getRid());
+		Assert.assertEquals("location OID should not change", openingLocation.getOid(), newOpeningLocation.getOid());
+		Assert.assertNotEquals("location RID should change", openingLocation.getRid(), newOpeningLocation.getRid()); // coordinates changed
+		Assert.assertNotEquals("geometry OID should change", opening.getGeometry().getOid(), newOpening.getGeometry().getOid());
+	}
+
+	@Test
+	public void testChangeAffectingOneProduct() throws ServerException, UserException, BimServerClientException {
+		// change window width: only window will have to be regenerated
+		SProject project = serviceInterface.getProjectByPoid(poid);
+		SRevision revision1 = serviceInterface.getRevision(project.getLastRevisionId());
+		IfcModelInterface model = bimServerClient.getModel(project, revision1.getOid(), true, true, true);
+		IfcWindow window = model.getFirst(IfcWindow.class);
+		long tid = lowLevelInterface.startTransaction(poid);
+		IfcCartesianPoint location = ((IfcAxis2Placement3D)((IfcLocalPlacement) window.getObjectPlacement()).getRelativePlacement()).getLocation();
+		Assert.assertEquals(50, location.getCoordinates().get(1), 0.0001);
+		lowLevelInterface.setDoubleAttributeAtIndex(tid, location.getOid(), "Coordinates", 1, 125.);
+		for (IfcRepresentation representation : window.getRepresentation().getRepresentations()){
+			if("".equals(representation.getRepresentationIdentifier())) {
+				IfcExtrudedAreaSolid representation3d = (IfcExtrudedAreaSolid) representation.getItems().get(0);
+				List<IfcCartesianPoint> points = ((IfcPolyline)((IfcArbitraryClosedProfileDef) representation3d.getSweptArea()).getOuterCurve()).getPoints();
+				Assert.assertEquals(200, points.get(1).getCoordinates().get(1), 0.0001);
+				Assert.assertEquals(200, points.get(2).getCoordinates().get(1), 0.0001);
+				lowLevelInterface.setDoubleAttributeAtIndex(tid, points.get(1).getOid(), "Coordinates", 1, 50.);
+				lowLevelInterface.setDoubleAttributeAtIndex(tid, points.get(2).getOid(), "Coordinates", 1, 50.);
+			}
+		}
+		long newRoid = lowLevelInterface.commitTransaction(tid, "Window depth changed from 200 to 50, centered", false);
+		IfcModelInterface newModel = bimServerClient.getModel(project, newRoid, true, true, true);
+		IfcWindow newWindow = newModel.getFirst(IfcWindow.class);
+		long topicId = serviceInterface.regenerateGeometryByOid(newRoid, renderEngineOid, newWindow.getOid()); // window oid should not have changed
+		waitForLongActionFinished(topicId);
+		// TODO check OIDs and RIDs
+	}
+
+	@Test
+	public void testLowLevelNoGeomChangeAfterRegenerate() throws ServiceException, BimServerClientException {
+		SProject project = serviceInterface.getProjectByPoid(poid);
+		SRevision revision1 = serviceInterface.getRevision(project.getLastRevisionId());
 
 		// regenerate geometry for first revision
 		long topic = serviceInterface.regenerateGeometry(project.getLastRevisionId(), renderEngineOid);
 		waitForLongActionFinished(topic);
-		revision1 = refreshRevision(bimServerClient, revision1);
+		revision1 = serviceInterface.getRevision(revision1.getOid());
 		int nrTriangles1 = countPrimitives(bimServerClient, project, revision1.getOid());
 		Assert.assertEquals("Expecting no new revision, 1 total.", 1, project.getRevisions().size());
 		Assert.assertTrue(revision1.isHasGeometry());
@@ -94,14 +158,6 @@ public class TestRegenerateGeometry extends TestWithEmbeddedServer {
 				e.printStackTrace();
 			}
 		}
-	}
-
-	private SRevision refreshRevision(BimServerClientInterface bimServerClient, SRevision revision1) throws ServerException, UserException {
-		return bimServerClient.getServiceInterface().getRevision(revision1.getOid());
-	}
-
-	private SProject refreshProject(BimServerClientInterface bimServerClient, SProject project) throws ServerException, UserException {
-		return bimServerClient.getServiceInterface().getProjectByPoid(project.getOid());
 	}
 
 	private int countPrimitives(BimServerClientInterface bimServerClient, SProject project, long roid) throws BimServerClientException, UserException, ServerException {
