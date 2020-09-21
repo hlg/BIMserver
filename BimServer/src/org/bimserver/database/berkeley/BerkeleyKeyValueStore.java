@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,6 +34,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.sleepycat.je.*;
+import com.sleepycat.je.cleaner.FileSummary;
 import org.bimserver.BimserverDatabaseException;
 import org.bimserver.database.BimTransaction;
 import org.bimserver.database.BimserverLockConflictException;
@@ -44,22 +47,6 @@ import org.bimserver.database.SearchingRecordIterator;
 import org.bimserver.utils.PathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.sleepycat.je.Cursor;
-import com.sleepycat.je.CursorConfig;
-import com.sleepycat.je.Database;
-import com.sleepycat.je.DatabaseConfig;
-import com.sleepycat.je.DatabaseEntry;
-import com.sleepycat.je.DatabaseException;
-import com.sleepycat.je.Environment;
-import com.sleepycat.je.EnvironmentConfig;
-import com.sleepycat.je.EnvironmentLockedException;
-import com.sleepycat.je.JEVersion;
-import com.sleepycat.je.LockConflictException;
-import com.sleepycat.je.LockMode;
-import com.sleepycat.je.OperationStatus;
-import com.sleepycat.je.Transaction;
-import com.sleepycat.je.TransactionConfig;
 
 public class BerkeleyKeyValueStore implements KeyValueStore {
 
@@ -498,11 +485,40 @@ public class BerkeleyKeyValueStore implements KeyValueStore {
 	@Override
 	public String getStats() {
 		try {
-			return environment.getStats(null).toString();
+			return environment.getStats(null).toString() + getLogFileStatsAsString();
 		} catch (DatabaseException e) {
 			LOGGER.error("", e);
 		}
 		return null;
+	}
+
+	private String getLogFileStatsAsString() {
+		StringBuilder logFileStatsString = new StringBuilder();
+		FileSummary logFileStats = getLogFileStats();
+		DecimalFormat format = new DecimalFormat();
+		format.setGroupingUsed(true);
+		logFileStatsString.append("Log File Size and Utilization");
+		logFileStatsString.append("\ntotalCount=").append(format.format(logFileStats.totalCount));
+		logFileStatsString.append("\ntotalINCount=").append(format.format(logFileStats.totalINCount));
+		logFileStatsString.append("\ntotalLNCount=").append(format.format(logFileStats.totalLNCount));
+		logFileStatsString.append("\nobsoleteINCount=").append(format.format(logFileStats.obsoleteINCount));
+		logFileStatsString.append("\nobsoleteLNCount=").append(format.format(logFileStats.obsoleteLNCount));
+		logFileStatsString.append("\ntotalSize=").append(format.format(logFileStats.totalSize));
+		logFileStatsString.append("\ntotalINSize=").append(format.format(logFileStats.totalINSize));
+		logFileStatsString.append("\ntotalLNSize=").append(format.format(logFileStats.totalLNSize));
+		logFileStatsString.append("\nobsoleteSize=").append(format.format(logFileStats.getObsoleteSize()));
+		logFileStatsString.append("\nobsoleteINSize=").append(format.format(logFileStats.getObsoleteINSize()));
+		logFileStatsString.append("\nobsoleteLNSize=").append(format.format(logFileStats.getObsoleteLNSize()));
+		return logFileStatsString.append('\n').toString();
+	}
+
+	private FileSummary getLogFileStats() {
+		Map<Long, FileSummary> usage = DbInternal.getNonNullEnvImpl(environment).getUtilizationProfile().getFileSummaryMap(true);
+		FileSummary total = new FileSummary();
+		for(FileSummary logFileSummary : usage.values()){
+			total.add(logFileSummary);
+		}
+		return total;
 	}
 
 	@Override
