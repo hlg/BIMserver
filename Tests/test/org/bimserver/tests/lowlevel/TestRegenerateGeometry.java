@@ -36,8 +36,7 @@ import org.junit.Test;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import static org.junit.Assert.fail;
 
@@ -83,6 +82,24 @@ public class TestRegenerateGeometry extends TestWithEmbeddedServer {
 		Assert.assertEquals("location OID should not change", openingLocation.getOid(), newOpeningLocation.getOid());
 		Assert.assertNotEquals("location RID should change", openingLocation.getRid(), newOpeningLocation.getRid()); // coordinates changed
 		Assert.assertNotEquals("geometry OID should change", opening.getGeometry().getOid(), newOpening.getGeometry().getOid());
+		for (SDatabaseInformationCategory logFileInfo : bimServerClient.getAdminInterface().getDatabaseInformation().getCategories()){
+			if (logFileInfo.getTitle().equals("Log File Size and Utilization")){
+				for (SDatabaseInformationItem dbInfo : logFileInfo.getItems()){
+					System.out.print(dbInfo.getKey());
+					System.out.print(" = ");
+					System.out.print(dbInfo.getValue());
+				}
+			}
+			if (logFileInfo.getTitle().startsWith("Cleaning")){
+				Map<String, Integer> items = new HashMap<>();
+				for(SDatabaseInformationItem item : logFileInfo.getItems()){
+				    items.put(item.getKey(), Integer.parseInt(item.getValue()));
+				}
+				System.out.print("estimated use: ");
+				System.out.println( items.get("activeLogFileSize") * ((items.get("maxUtilization") + items.get("minUtilization"))/2) / 100 );
+			}
+
+		}
 	}
 
 	@Test
