@@ -29,6 +29,9 @@ import org.bimserver.database.OldQuery;
 import org.bimserver.emf.PackageMetaData;
 import org.bimserver.geometry.GeometryGenerationReport;
 import org.bimserver.geometry.StreamingGeometryGenerator;
+import org.bimserver.models.geometry.GeometryInfo;
+import org.bimserver.models.geometry.GeometryPackage;
+import org.bimserver.models.ifc4.IfcProduct;
 import org.bimserver.models.log.AccessMethod;
 import org.bimserver.models.store.*;
 import org.bimserver.shared.QueryContext;
@@ -36,6 +39,7 @@ import org.bimserver.shared.exceptions.ServerException;
 import org.bimserver.shared.exceptions.UserException;
 
 import com.google.common.base.Charsets;
+import org.eclipse.emf.ecore.EClass;
 
 public class RegenerateGeometryDatabaseAction extends ProjectBasedDatabaseAction<Void> {
 
@@ -85,7 +89,14 @@ public class RegenerateGeometryDatabaseAction extends ProjectBasedDatabaseAction
 			for (Revision other : concreteRevision.getRevisions()) {
 				other.setHasGeometry(true);
 			}
-			
+			if(oid > -1) for (GeometryInfo geometryInfo : getDatabaseSession().getAllOfType(GeometryPackage.eINSTANCE.getGeometryInfo(), GeometryInfo.class, new OldQuery(packageMetaData, revision.getPid(), revision.getRid(), revision.getOid()))){
+				if(geometryInfo.getIfcProductOid()!=oid){
+					generateGeometry.setMinX(Math.min(generateGeometry.getMinX(), geometryInfo.getBounds().getMin().getX()));
+					generateGeometry.setMaxX(Math.max(generateGeometry.getMaxX(), geometryInfo.getBounds().getMax().getX()));
+					generateGeometry.setMinY(Math.min(generateGeometry.getMinY(), geometryInfo.getBounds().getMin().getY()));
+					generateGeometry.setMaxY(Math.max(generateGeometry.getMaxY(), geometryInfo.getBounds().getMax().getY()));
+				}
+			}
 			concreteRevision.setMultiplierToMm(generateGeometry.getMultiplierToMm());
 			concreteRevision.setBounds(generateGeometry.getBounds());
 			concreteRevision.setBoundsUntransformed(generateGeometry.getBoundsUntransformed());
