@@ -26,6 +26,7 @@ import org.bimserver.GeometryGeneratingException;
 import org.bimserver.database.BimserverLockConflictException;
 import org.bimserver.database.DatabaseSession;
 import org.bimserver.database.OldQuery;
+import org.bimserver.emf.IdEObject;
 import org.bimserver.emf.PackageMetaData;
 import org.bimserver.geometry.GeometryGenerationReport;
 import org.bimserver.geometry.StreamingGeometryGenerator;
@@ -89,12 +90,18 @@ public class RegenerateGeometryDatabaseAction extends ProjectBasedDatabaseAction
 			for (Revision other : concreteRevision.getRevisions()) {
 				other.setHasGeometry(true);
 			}
-			if(oid > -1) for (GeometryInfo geometryInfo : getDatabaseSession().getAllOfType(GeometryPackage.eINSTANCE.getGeometryInfo(), GeometryInfo.class, new OldQuery(packageMetaData, revision.getPid(), revision.getRid(), revision.getOid()))){
+			OldQuery query = new OldQuery(packageMetaData, revision.getProject().getId(), revision.getId(), revision.getOid());
+			if(oid > -1) for (IdEObject geometryInfoEObj : getDatabaseSession().getAllOfType(GeometryPackage.eINSTANCE.getName(), "GeometryInfo", query).getAllWithSubTypes(GeometryPackage.eINSTANCE.getGeometryInfo())){
+				GeometryInfo geometryInfo = (GeometryInfo) geometryInfoEObj;
 				if(geometryInfo.getIfcProductOid()!=oid){
 					generateGeometry.setMinX(Math.min(generateGeometry.getMinX(), geometryInfo.getBounds().getMin().getX()));
 					generateGeometry.setMaxX(Math.max(generateGeometry.getMaxX(), geometryInfo.getBounds().getMax().getX()));
 					generateGeometry.setMinY(Math.min(generateGeometry.getMinY(), geometryInfo.getBounds().getMin().getY()));
 					generateGeometry.setMaxY(Math.max(generateGeometry.getMaxY(), geometryInfo.getBounds().getMax().getY()));
+					generateGeometry.setUntranslatedMinX(Math.min(generateGeometry.getUntranslatedMinX(), geometryInfo.getBoundsUntransformed().getMin().getX()));
+					generateGeometry.setUntranslatedMaxX(Math.max(generateGeometry.getUntranslatedMaxX(), geometryInfo.getBoundsUntransformed().getMax().getX()));
+					generateGeometry.setUntranslatedMinY(Math.min(generateGeometry.getUntranslatedMinY(), geometryInfo.getBoundsUntransformed().getMin().getY()));
+					generateGeometry.setUntranslatedMaxY(Math.max(generateGeometry.getUntranslatedMaxY(), geometryInfo.getBoundsUntransformed().getMax().getY()));
 				}
 			}
 			concreteRevision.setMultiplierToMm(generateGeometry.getMultiplierToMm());
