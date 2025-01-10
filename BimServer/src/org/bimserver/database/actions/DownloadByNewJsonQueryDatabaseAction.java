@@ -64,6 +64,7 @@ import org.eclipse.emf.common.util.AbstractEList;
 import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EReference;
+import org.eclipse.emf.ecore.EStructuralFeature;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -256,16 +257,31 @@ public class DownloadByNewJsonQueryDatabaseAction extends AbstractDownloadDataba
 									} else if (refOid instanceof HashMapVirtualObject) {
 										HashMapVirtualObject hashMapVirtualObject = (HashMapVirtualObject)refOid;
 										IdEObject listObject = packageMetaData.create(hashMapVirtualObject.eClass());
-										List subList = (List<?>) hashMapVirtualObject.get("List");
-										List newList = (List<?>) listObject.eGet(listObject.eClass().getEStructuralFeature("List"));
-										for (Object o : subList) {
-											if (o instanceof HashMapWrappedVirtualObject) {
-												newList.add(convertWrapped(revision, ifcModel, (HashMapWrappedVirtualObject)o));
-											} else if (o instanceof Long) {
-												LOGGER.warn("Unprocessed list element: " + o);
-												// TODO
-											} else {
-												newList.add(o);
+										if(hashMapVirtualObject.eClass().getEAnnotation("wrapped")!=null){
+											// TODO it seems that hashmap virtual objects come out wrong from object provider for defined type attributes with higher cardinalities (many), maybe only if they are defined from long integer types?
+											// e.g. IfcLineIndex.Segments in IFC4
+											List wrappedList = (List<?>) hashMapVirtualObject.get("wrapped");
+											EStructuralFeature wrappedValue = listObject.eClass().getEStructuralFeature("wrappedValue");
+											List newList = (List<?>) listObject.eGet(wrappedValue);
+											for (Object o: wrappedList){
+												if(wrappedValue.getEType().isInstance(o)){
+													newList.add(o);
+												} else {
+													LOGGER.warn("Unprocessed list element: " + o);
+												}
+											}
+										} else {
+											List subList = (List<?>) hashMapVirtualObject.get("List");
+											List newList = (List<?>) listObject.eGet(listObject.eClass().getEStructuralFeature("List"));
+											for (Object o : subList) {
+												if (o instanceof HashMapWrappedVirtualObject) {
+													newList.add(convertWrapped(revision, ifcModel, (HashMapWrappedVirtualObject) o));
+												} else if (o instanceof Long) {
+													LOGGER.warn("Unprocessed list element: " + o);
+													// TODO
+												} else {
+													newList.add(o);
+												}
 											}
 										}
 										list.addUnique(listObject);
